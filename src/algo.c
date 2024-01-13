@@ -19,7 +19,7 @@ struct Node* createNode(int data) {
     newNode->next = NULL;
     return newNode;
 }
-// Fonction pour ajouter un nœud à la fin de la liste doublement chaînée
+// Fonction pour ajouter un nœud à la fin de la liste doublement chainee
 
 void appendNode(struct Node** headRef, int data) {
     struct Node* newNode = createNode(data);
@@ -48,10 +48,10 @@ void highlightComparison(struct Node* node1, struct Node* node2, SDL_Renderer* r
     // Sauvegarder la couleur actuelle du rendu
     SDL_Color currentColor;
     SDL_GetRenderDrawColor(renderer, &currentColor.r, &currentColor.g, &currentColor.b, &currentColor.a);
-    // Couleur rouge pour la mise en évidence
+    // Couleur violette pour la mise en évidence
     SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
 
-    // Dessiner les rectangles en rouge
+    // Dessiner les rectangles en violet
     SDL_Rect rect1 = {node1->xpos, 400 - node1->data * 15, 35, node1->data * 15};
     SDL_Rect rect2 = {node2->xpos, 400 - node2->data * 15, 35, node2->data * 15};
 
@@ -89,7 +89,7 @@ void rendertext(SDL_Renderer* renderer, int x, int y, TTF_Font* font, const char
 
     SDL_Surface* textSurface = TTF_RenderText_Blended(font, text, textColor);
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-
+    
     SDL_Rect textRect = {x, y, textSurface->w, textSurface->h};
     SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
 
@@ -97,10 +97,15 @@ void rendertext(SDL_Renderer* renderer, int x, int y, TTF_Font* font, const char
     SDL_DestroyTexture(textTexture);
 }
 
+void renderMessage(SDL_Renderer* renderer, TTF_Font* font, const char* message) {
+    SDL_Color textColor = {255, 0, 255, 255};
+    rendertext(renderer, 10, 10, font, message, textColor);
+    SDL_RenderPresent(renderer);
+    SDL_Delay(1000);
+}
 // Fonction pour trier la liste doublement chaînée par sélection
-
 void selectionSort(struct Node* head, SDL_Renderer* renderer,TTF_Font* font) {
-
+    
     struct Node *i, *j, *minNode;
     // Afficher la liste avant le tri
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -129,6 +134,10 @@ void selectionSort(struct Node* head, SDL_Renderer* renderer,TTF_Font* font) {
         }
     }
 
+    char message[50];
+    snprintf(message, sizeof(message), "Echange des elements %d et %d...", i->data, minNode->data);
+    renderMessage(renderer, font, message);
+
     // Échanger les données des nœuds
     highlightComparison(i, minNode, renderer);
     swapData(i, minNode);
@@ -153,10 +162,40 @@ void selectionSort(struct Node* head, SDL_Renderer* renderer,TTF_Font* font) {
     SDL_RenderPresent(renderer);
     SDL_Delay(1000); // Attendre 1000 millisecondes entre chaque étape
 }
+renderMessage(renderer, font, "Tri par selection terminee.");
 }
+
 int isMouseOverButton(int mouseX, int mouseY, SDL_Rect buttonRect) {
     return mouseX >= buttonRect.x && mouseX <= buttonRect.x + buttonRect.w &&
-           mouseY >= buttonRect.y && mouseY <= buttonRect.y + buttonRect.h;
+    mouseY >= buttonRect.y && mouseY <= buttonRect.y + buttonRect.h;
+}
+
+void renderRepeatButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect buttonRect) {
+    SDL_Color buttonColor = {100, 100, 100, 255};
+
+    SDL_SetRenderDrawColor(renderer, buttonColor.r, buttonColor.g, buttonColor.b, buttonColor.a);
+    SDL_RenderFillRect(renderer, &buttonRect);
+
+    SDL_Color textColor = {255, 0, 255, 255};
+    rendertext(renderer, buttonRect.x + 15, buttonRect.y + 15, font, "Repeat", textColor);
+}
+
+// Function to copy a linked list
+void copyList(struct Node* original, struct Node** copy) {
+    while (original != NULL) {
+        appendNode(copy, original->data);
+        original = original->next;
+    }
+}
+
+// Function to free memory allocated for a linked list
+void freeList(struct Node* head) {
+    struct Node* current = head;
+    while (current != NULL) {
+        struct Node* next = current->next;
+        free(current);
+        current = next;
+    }
 }
 int main(int argc, char* argv[]) {
 
@@ -164,33 +203,28 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("SDL Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-
     TTF_Init();
     TTF_Font* font = TTF_OpenFont("bin\\arial.ttf", 24);
     SDL_Event e;
-    // Création d'une liste doublement chaînée non triée
 
-    struct Node* head = NULL;
-    appendNode(&head, 10);
-    appendNode(&head, 20);
-    appendNode(&head, 16);
-    appendNode(&head, 18);
-    appendNode(&head, 12);
-    appendNode(&head, 10);
-    appendNode(&head, 24);
-    appendNode(&head, 14);
-    printf("Liste doublement chaînée non triée\n");
-    // Afficher la liste avant le tri
+    // Create the original unsorted list
+    struct Node* originalList = NULL;
+    appendNode(&originalList, 10);
+    appendNode(&originalList, 21);
+    appendNode(&originalList, 16);
+    appendNode(&originalList, 14);
+    appendNode(&originalList, 12);
+    appendNode(&originalList, 25);
+    appendNode(&originalList, 24);
+    appendNode(&originalList, 11);
 
-    struct Node* current = head;
-
-    while (current != NULL) {
-        printf("%d ", current->data);
-        current = current->next;
+    printf("Original unsorted list:\n");
+    struct Node* currentOriginal = originalList;
+    while (currentOriginal != NULL) {
+        printf("%d ", currentOriginal->data);
+        currentOriginal = currentOriginal->next;
     }
-
     printf("\n");
-
 
     // Create "Start" button
     SDL_Rect buttonRect = {350, 500, 100, 50};
@@ -202,11 +236,18 @@ int main(int argc, char* argv[]) {
     SDL_Color textColor = {255, 0, 255, 255};
     rendertext(renderer, buttonRect.x + 15, buttonRect.y + 15, font, "Start", textColor);
 
-    // Render "SELECTION CODE" in the middle
+    // Render "SELECTION SORT" in the middle
     SDL_Color selectionTextColor = {150, 100, 150, 255};
-    rendertext(renderer, 280, 220, font, "SELECTION SORT", selectionTextColor);
+    SDL_Surface* textSurface = TTF_RenderText_Solid(font, "SELECTION SORT", textColor);
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    SDL_Rect textRect = {200, 170, 400, 100};
+    SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
 
     SDL_RenderPresent(renderer);
+
+    // Create "Repeat" button
+    SDL_Rect repeatButtonRect = {500, 500, 100, 50};
+    renderRepeatButton(renderer, font, repeatButtonRect);
 
     // Event loop
     int sortingStarted = 0;
@@ -219,10 +260,31 @@ int main(int argc, char* argv[]) {
                 int mouseX, mouseY;
                 SDL_GetMouseState(&mouseX, &mouseY);
 
+                // Check if the "Start" button is clicked
                 if (isMouseOverButton(mouseX, mouseY, buttonRect) && !sortingStarted) {
+                    // Copy the original list to head before sorting
+                    struct Node* head = NULL;
+                    copyList(originalList, &head);
+
                     selectionSort(head, renderer, font);
                     sortingStarted = 1;
                 }
+
+                // Check if the "Repeat" button is clicked
+                if (isMouseOverButton(mouseX, mouseY, repeatButtonRect) && sortingStarted) {
+                    // Reset sortingStarted flag and repeat the selectionSort with the original unsorted list
+                    sortingStarted = 0;
+
+                    struct Node* head = NULL;
+                    copyList(originalList, &head);
+
+                    selectionSort(head, renderer, font);
+                    sortingStarted = 1;
+                }
+
+                SDL_Rect repeatButtonRect = {500, 500, 100, 50};
+                renderRepeatButton(renderer, font, repeatButtonRect);
+                SDL_RenderPresent(renderer);
             }
         }
     }
@@ -230,7 +292,7 @@ int main(int argc, char* argv[]) {
     printf("\n");
     // Attendre que l'utilisateur ferme la fenêtre
     SDL_Delay(2000);
-    
+
     while (!quit) {
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
@@ -239,13 +301,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // Free memory
+    freeList(originalList);
     TTF_CloseFont(font);
     TTF_Quit();
-
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
-
 }
-//gcc src/projet.c -o bin/prog -I include -L lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf
+//gcc src/algo.c -o bin/prog -I include -L lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf
